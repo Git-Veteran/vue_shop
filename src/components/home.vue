@@ -11,27 +11,45 @@
     <!-- 页面主体区域 -->
     <el-container>
       <!-- 侧边栏 -->
-      <el-aside width="200px">
+      <el-aside :width="isCollapse ? '64px' : '200px'">
+        <div class="toggleBtn" @click="togglebtn">|||</div>
         <!-- 侧边栏菜单区 -->
-        <el-menu background-color="#333744" text-color="#fff" active-text-color="#ffd04b">
+        <el-menu
+          background-color="#333744"
+          text-color="#fff"
+          active-text-color="#409eff"
+          :unique-opened="true"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+          :router="true"
+          :default-active="i"
+        >
           <!-- 一级菜单 -->
-          <el-submenu index="1">
+          <el-submenu :index="item.id + ''" v-for="item in menus" :key="item.id">
             <template slot="title">
-              <i class="el-icon-menu"></i>
-              <span>导航一</span>
+              <i :class="iconsObj[item.id]"></i>
+              <span>{{item.authName}}</span>
             </template>
             <!-- 二级菜单 -->
-            <el-menu-item index="1-4-1">
+            <el-menu-item
+              :index="'/' + subItem.path"
+              v-for="subItem in item.children"
+              :key="subItem.id"
+              @click="saveNavState('/' + subItem.path)"
+            >
               <template slot="title">
                 <i class="el-icon-menu"></i>
-                <span>导航一</span>
+                <span>{{subItem.authName}}</span>
               </template>
             </el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>
       <!-- 右侧 -->
-      <el-main>Main</el-main>
+      <el-main>
+        <!-- 路由占位符 -->
+        <router-view></router-view>
+      </el-main>
     </el-container>
   </el-container>
 </template>
@@ -39,9 +57,25 @@
 <script>
 export default {
   data() {
-    return {}
+    return {
+      menus: [],
+      iconsObj: {
+        '125': 'iconfont icon-users',
+        '103': 'iconfont icon-lock_fill',
+        '101': 'iconfont icon-shangpin',
+        '102': 'iconfont icon-danju',
+        '145': 'iconfont icon-baobiao'
+      },
+      // 默认不折叠
+      isCollapse: false,
+      // 被激活的链接地址
+      i: ''
+    }
   },
-  created() {},
+  created() {
+    this.getMenuList()
+    this.i = window.sessionStorage.getItem('i')
+  },
   methods: {
     logout() {
       window.sessionStorage.clear()
@@ -50,6 +84,25 @@ export default {
         message: '退出成功',
         type: 'success'
       })
+    },
+    // 获取所有的菜单
+    async getMenuList() {
+      const { data: res } = await this.$http.get('menus')
+      // console.log(res)
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
+      this.menus = res.data
+      // console.log(res.data)
+    },
+    // 点击按钮切换菜单的折叠与展开
+    togglebtn() {
+      this.isCollapse = !this.isCollapse
+    },
+    // 保存链接的激活状态
+    saveNavState(i) {
+      window.sessionStorage.setItem('i', i)
+      this.i = i
     }
   }
 }
@@ -77,8 +130,23 @@ export default {
 }
 .el-aside {
   background-color: #333744;
+  .el-menu {
+    border-right: none;
+  }
 }
 .el-main {
   background-color: #eaedf1;
+}
+.iconfont {
+  margin-right: 8px;
+}
+.toggleBtn {
+  background-color: #4a5064;
+  text-align: center;
+  font-size: 10px;
+  line-height: 24px;
+  color: #fff;
+  letter-spacing: 0.2em;
+  cursor: pointer;
 }
 </style>
